@@ -1,0 +1,2 @@
+flask[async]==2.2.2
+requests==2.28.1
