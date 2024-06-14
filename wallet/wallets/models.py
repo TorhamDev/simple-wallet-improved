@@ -16,4 +16,3 @@ class Wallet(models.Model):
     def deposit(self, amount: int):
         # todo: deposit the amount into this wallet
         pass
-

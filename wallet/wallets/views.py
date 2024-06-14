@@ -27,4 +27,3 @@ class ScheduleWithdrawView(APIView):
         # todo: implement withdraw logic
         pass
         return Response({})
-
