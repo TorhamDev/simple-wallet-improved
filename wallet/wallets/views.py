@@ -17,7 +17,7 @@ class RetrieveWalletView(RetrieveAPIView):
 
 
 class CreateDepositView(APIView):
-    def post(self, reqeust, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         # todo: update the wallet's balance and return proper response
         return Response({})
 
