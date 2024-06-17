@@ -2,6 +2,7 @@ import uuid
 
 from django.core.validators import MinLengthValidator
 from django.db import models, transaction
+from django.utils import timezone
 
 from wallets.constants import TransactionsStatus, TransactionsType
 
@@ -36,6 +37,8 @@ class Transaction(BaseModel):
         default=TransactionsStatus.IN_PROGRESS,
     )
 
+    draw_time = models.DateTimeField(default=timezone.now)
+
     def __str__(self) -> str:
         return f"{self.tr_type} {self.amount}"  # TODO figure out deleted wallets tr to show username too
 
@@ -67,3 +70,6 @@ class Wallet(BaseModel):
             tr_type=TransactionsType.DIPOSIT,
             status=TransactionsStatus.SUCCESS,
         )
+
+    @transaction.atomic()
+    def withdraw(self, *, amount: int, draw_time: ...): ...
