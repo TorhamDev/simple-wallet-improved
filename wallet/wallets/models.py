@@ -60,3 +60,10 @@ class Wallet(BaseModel):
         obj = self.get_queryset().select_for_update().get()
         obj.balance = models.F("balance") + amount
         obj.save()
+
+        Transaction.objects.create(
+            amount=amount,
+            wallet=self,
+            tr_type=TransactionsType.DIPOSIT,
+            status=TransactionsStatus.SUCCESS,
+        )
