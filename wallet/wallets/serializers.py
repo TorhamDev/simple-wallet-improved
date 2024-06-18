@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers, status
 
 from wallets.models import Transaction, Wallet
@@ -33,3 +34,12 @@ class CreateTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
         fields = ("amount", "draw_time")
+
+    def validate_draw_time(self, value):
+        if value < timezone.now():
+            raise serializers.ValidationError(
+                detail="Pls enter a draw time in the future.",
+                code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return value
