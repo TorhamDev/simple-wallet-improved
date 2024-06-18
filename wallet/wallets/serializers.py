@@ -1,6 +1,6 @@
 from rest_framework import serializers, status
 
-from wallets.models import Wallet
+from wallets.models import Transaction, Wallet
 
 
 class WalletSerializer(serializers.ModelSerializer):
@@ -21,3 +21,15 @@ class WalletDepositSerializer(serializers.Serializer):
             )
 
         return value
+
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ("uuid", "amount", "wallet", "tr_type", "status")
+
+
+class CreateTransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ("amount", "draw_time")
