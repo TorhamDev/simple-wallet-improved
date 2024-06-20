@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from django.core.validators import MinLengthValidator
 from django.db import models, transaction
@@ -72,4 +73,12 @@ class Wallet(BaseModel):
         )
 
     @transaction.atomic()
-    def withdraw(self, *, amount: int, draw_time: ...): ...
+    def withdraw(self, *, amount: int, draw_time: datetime):
+        tr = Transaction.objects.create(
+            amount=amount,
+            draw_time=draw_time,
+            tr_type=TransactionsType.WITHDRAW,
+            wallet=self,
+        )
+
+        return tr

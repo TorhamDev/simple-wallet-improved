@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from wallets import serializers
-from wallets.constants import TransactionsType
 from wallets.models import Wallet
 
 
@@ -37,6 +36,10 @@ class ScheduleWithdrawView(APIView):
         serializer = serializers.CreateTransactionSerializer(data=request.data)
 
         serializer.is_valid(raise_exception=True)
-        tr = serializer.save(tr_type=TransactionsType.WITHDRAW, wallet=wallet)
+
+        tr = wallet.withdraw(
+            amount=serializer.validated_data["amount"],
+            draw_time=serializer.validated_data["draw_time"],
+        )
 
         return Response(serializers.TransactionSerializer(instance=tr).data)
