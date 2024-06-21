@@ -139,8 +139,12 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 
 CELERY_BEAT_SCHEDULE = {
-    "get_transactions_to_withdraw": {
+    "produce_transactions_to_withdraw": {
         "task": "wallets.tasks.transactions_producer",
         "schedule": 30,
+    },
+    "consume_withdraw_transactions": {
+        "task": "wallets.tasks.transactions_consumer",
+        "schedule": 50,
     },
 }
