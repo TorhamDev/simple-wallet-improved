@@ -131,3 +131,16 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [],
     "DEFAULT_AUTHENTICATION_CLASSES": [],
 }
+
+
+CELERY_BROKER_URL = "amqp://rabbitmq:rabbitmq@127.0.0.1:5672"
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+
+CELERY_BEAT_SCHEDULE = {
+    "get_transactions_to_withdraw": {
+        "task": "wallets.tasks.transactions_producer",
+        "schedule": 30,
+    },
+}
