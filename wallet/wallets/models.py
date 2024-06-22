@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from django.core.validators import MinLengthValidator
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.utils import timezone
 
 from wallets.constants import TransactionsStatus, TransactionsType
@@ -59,7 +59,7 @@ class Wallet(BaseModel):
     def get_queryset(self):
         return self.__class__.objects.filter(uuid=self.uuid)
 
-    @transaction.atomic()
+    @transaction.atomic
     def deposit(self, *, amount: int):
         obj = self.get_queryset().select_for_update().get()
         obj.balance = models.F("balance") + amount
@@ -72,7 +72,7 @@ class Wallet(BaseModel):
             status=TransactionsStatus.SUCCESS,
         )
 
-    @transaction.atomic()
+    @transaction.atomic
     def create_transaction_withdraw(self, *, amount: int, draw_time: datetime):
         tr = Transaction.objects.create(
             amount=amount,
@@ -83,20 +83,25 @@ class Wallet(BaseModel):
 
         return tr
 
-    @transaction.atomic()
-    def withdraw(self, *, transaction: Transaction):
+    @transaction.atomic
+    def withdraw(self, *, tr: Transaction):
         obj = self.get_queryset().select_for_update().get()
+        if obj.balance > tr.amount:
+            try:
+                with transaction.atomic():
+                    obj.balance = models.F("balance") - tr.amount
+                    obj.save()
 
-        if obj.balance > transaction.amount:
-            obj.balance = models.F("balance") - transaction.amount
-            obj.save()
-
-            print("[X] Requesting to 3rd part bank!!!!!")
-
-            return True
+                    print("[X] Requesting to 3rd part bank!!!!!")
+                    raise ValueError("[X] BANK ERROR")
+                    return True
+            except (ValueError, IntegrityError):
+                tr.status = TransactionsStatus.RETRY
+                tr.save(update_fields=["status"])
+                return False
 
         print("[X] OH! wallet dosent have balance for this transaction!")
-        transaction.status = TransactionsStatus.FAILED
-        transaction.save(update_fields=["status"])
+        tr.status = TransactionsStatus.FAILED
+        tr.save(update_fields=["status"])
 
         return False

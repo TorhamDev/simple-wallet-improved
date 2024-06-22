@@ -71,7 +71,7 @@ def transactions_consumer():
             .get()
         )
 
-        withdrae = tr.wallet.withdraw(transaction=tr)
+        withdrae = tr.wallet.withdraw(tr=tr)
 
         if withdrae:
             tr.status = TransactionsStatus.SUCCESS
