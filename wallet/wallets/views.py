@@ -37,7 +37,7 @@ class ScheduleWithdrawView(APIView):
 
         serializer.is_valid(raise_exception=True)
 
-        tr = wallet.withdraw(
+        tr = wallet.create_transaction_withdraw(
             amount=serializer.validated_data["amount"],
             draw_time=serializer.validated_data["draw_time"],
         )

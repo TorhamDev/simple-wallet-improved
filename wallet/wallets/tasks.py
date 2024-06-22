@@ -70,8 +70,12 @@ def transactions_consumer():
             .filter(uuid=UUID(tr_data["uuid"]))
             .get()
         )
-        tr.status = TransactionsStatus.SUCCESS
-        tr.save(update_fields=["status"])
+
+        withdrae = tr.wallet.withdraw(transaction=tr)
+
+        if withdrae:
+            tr.status = TransactionsStatus.SUCCESS
+            tr.save(update_fields=["status"])
 
     channel.basic_consume(queue="hello", on_message_callback=callback, auto_ack=True)
 

@@ -73,7 +73,7 @@ class Wallet(BaseModel):
         )
 
     @transaction.atomic()
-    def withdraw(self, *, amount: int, draw_time: datetime):
+    def create_transaction_withdraw(self, *, amount: int, draw_time: datetime):
         tr = Transaction.objects.create(
             amount=amount,
             draw_time=draw_time,
@@ -82,3 +82,21 @@ class Wallet(BaseModel):
         )
 
         return tr
+
+    @transaction.atomic()
+    def withdraw(self, *, transaction: Transaction):
+        obj = self.get_queryset().select_for_update().get()
+
+        if obj.balance > transaction.amount:
+            obj.balance = models.F("balance") - transaction.amount
+            obj.save()
+
+            print("[X] Requesting to 3rd part bank!!!!!")
+
+            return True
+
+        print("[X] OH! wallet dosent have balance for this transaction!")
+        transaction.status = TransactionsStatus.FAILED
+        transaction.save(update_fields=["status"])
+
+        return False
