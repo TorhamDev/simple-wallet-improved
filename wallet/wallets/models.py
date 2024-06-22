@@ -6,6 +6,7 @@ from django.db import IntegrityError, models, transaction
 from django.utils import timezone
 
 from wallets.constants import TransactionsStatus, TransactionsType
+from wallets.utils import request_third_party_deposit
 
 
 class BaseModel(models.Model):
@@ -93,7 +94,9 @@ class Wallet(BaseModel):
                     obj.save()
 
                     print("[X] Requesting to 3rd part bank!!!!!")
-                    raise ValueError("[X] BANK ERROR")
+                    third_party = request_third_party_deposit()
+                    if not third_party:
+                        raise ValueError("[X] BANK ERROR")
                     return True
             except (ValueError, IntegrityError):
                 tr.status = TransactionsStatus.RETRY
