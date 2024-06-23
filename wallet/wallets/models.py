@@ -117,7 +117,6 @@ class Wallet(BaseModel):
                     obj.balance = models.F("balance") - tr.amount
                     obj.save()
 
-                    print("[X] Requesting to 3rd part bank!!!!!")
                     third_party = request_third_party_deposit()
                     if not third_party:
                         raise ThirdPartyError()
@@ -142,7 +141,6 @@ class Wallet(BaseModel):
 
                 return False
 
-        print("[X] OH! wallet dosent have balance for this transaction!")
         tr.status = TransactionsStatus.FAILED
         tr.reason = TransactionsFailReason.LOW_BALANCE
         tr.save(update_fields=["status", "reason"])

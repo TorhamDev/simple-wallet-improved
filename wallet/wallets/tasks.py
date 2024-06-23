@@ -25,7 +25,6 @@ def transactions_producer():
     channel = connection.channel()
 
     channel.queue_declare(queue="hello")
-    print("[xxxxxxxxxxxxxxx] START PRODUCE")
     with transaction.atomic():
         now = timezone.now()
         transactions = Transaction.objects.select_for_update().filter(
@@ -35,7 +34,6 @@ def transactions_producer():
             retry__gt=0,
         )
 
-        print(f"[xxxxxxxxxxxxxxx] PRODUCE: {transactions}")
         for tr in transactions:
             channel.basic_publish(
                 exchange="",
@@ -53,8 +51,6 @@ def transactions_producer():
 
         transactions.update(status=TransactionsStatus.PENDING)
 
-        print("[xxxxxxxxxxxxxxx] PRODUCE IS OVER!!!!")
-
 
 @app.task()
 def transactions_consumer():
@@ -67,7 +63,6 @@ def transactions_consumer():
     channel.queue_declare(queue="hello")
 
     def callback(ch, method, properties, body):
-        print(f" [x] Received {json.loads(body)}")
         tr_data = ast.literal_eval(json.loads(body))
         with transaction.atomic():
             tr = (
