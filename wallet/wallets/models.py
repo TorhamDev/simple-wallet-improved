@@ -47,7 +47,12 @@ class Transaction(BaseModel):
         return self.__class__.objects.filter(uuid=self.uuid)
 
     def __str__(self) -> str:
-        return f"{self.tr_type} {self.amount}"  # TODO figure out deleted wallets tr to show username too
+        username = "*REMOVED USER*"
+
+        if hasattr(self.wallet, "username") and self.wallet.username is not None:
+            username = self.wallet.username
+
+        return f"{self.tr_type} {self.amount} to {username}"
 
 
 class Wallet(BaseModel):
