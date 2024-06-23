@@ -12,3 +12,10 @@ class TransactionsStatus(TextChoices):
     RETRY = "R", "Retry"
     PENDING = "P", "Pending"
     IN_PROGRESS = "I", "In Progress"
+
+
+class TransactionsFailReason(TextChoices):
+    CONNECTION_ERROR = "CE", "Connection Error"
+    THIRD_PARTY_FAIL = "TPF", "Third Party Fail"
+    LOW_BALANCE = "LB", "Low Balance"
+    SYSTEM_ERROR = "SE", "System Error"

@@ -6,7 +6,11 @@ from django.db import IntegrityError, models, transaction
 from django.utils import timezone
 from requests.exceptions import ConnectionError as ReqConnectionError
 
-from wallets.constants import TransactionsStatus, TransactionsType
+from wallets.constants import (
+    TransactionsFailReason,
+    TransactionsStatus,
+    TransactionsType,
+)
 from wallets.exceptions import ThirdPartyError
 from wallets.utils import request_third_party_deposit
 
@@ -42,6 +46,16 @@ class Transaction(BaseModel):
     )
 
     draw_time = models.DateTimeField(default=timezone.now)
+
+    retry = models.IntegerField(default=5)
+
+    reason = models.CharField(
+        max_length=4,
+        choices=TransactionsFailReason.choices,
+        help_text="Reason why trasnaction faild.",
+        null=True,
+        blank=True,
+    )
 
     def get_queryset(self):
         return self.__class__.objects.filter(uuid=self.uuid)
