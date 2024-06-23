@@ -32,6 +32,7 @@ def transactions_producer():
             tr_type=TransactionsType.WITHDRAW,
             status__in=(TransactionsStatus.IN_PROGRESS, TransactionsStatus.RETRY),
             draw_time__lt=now,
+            retry__gt=0,
         )
 
         print(f"[xxxxxxxxxxxxxxx] PRODUCE: {transactions}")

@@ -125,14 +125,26 @@ class Wallet(BaseModel):
             except (ThirdPartyError, IntegrityError, ReqConnectionError) as e:
                 if isinstance(e, ThirdPartyError):
                     tr.status = TransactionsStatus.FAILED
-                    tr.save(update_fields=["status"])
-                if isinstance(e, (ReqConnectionError, IntegrityError)):
+                    tr.reason = TransactionsFailReason.THIRD_PARTY_FAIL
+                    tr.save(update_fields=["status", "reason"])
+
+                elif isinstance(e, ReqConnectionError):
                     tr.status = TransactionsStatus.RETRY
-                    tr.save(update_fields=["status"])
+                    tr.reason = TransactionsFailReason.CONNECTION_ERROR
+                    tr.retry = models.F("retry") - 1
+                    tr.save(update_fields=["status", "reason", "retry"])
+
+                elif isinstance(e, IntegrityError):
+                    tr.status = TransactionsStatus.RETRY
+                    tr.reason = TransactionsFailReason.SYSTEM_ERROR
+                    tr.retry = models.F("retry") - 1
+                    tr.save(update_fields=["status", "reason", "retry"])
+
                 return False
 
         print("[X] OH! wallet dosent have balance for this transaction!")
         tr.status = TransactionsStatus.FAILED
-        tr.save(update_fields=["status"])
+        tr.reason = TransactionsFailReason.LOW_BALANCE
+        tr.save(update_fields=["status", "reason"])
 
         return False
