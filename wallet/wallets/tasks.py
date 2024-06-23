@@ -51,8 +51,7 @@ def transactions_producer():
                 ),
             )
 
-            tr.status = TransactionsStatus.PENDING
-            tr.save(update_fields=["status"])
+        transactions.update(status=TransactionsStatus.PENDING)
 
         print("[xxxxxxxxxxxxxxx] PRODUCE IS OVER!!!!")
 
