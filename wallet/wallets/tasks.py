@@ -5,6 +5,7 @@ from uuid import UUID
 
 import pika
 from django.db import transaction
+from django.utils import timezone
 
 from wallet.celery import app
 from wallets.constants import TransactionsStatus, TransactionsType
@@ -26,10 +27,11 @@ def transactions_producer():
     channel.queue_declare(queue="hello")
     print("[xxxxxxxxxxxxxxx] START PRODUCE")
     with transaction.atomic():
+        now = timezone.now()
         transactions = Transaction.objects.select_for_update().filter(
             tr_type=TransactionsType.WITHDRAW,
-            status=TransactionsStatus.IN_PROGRESS,
-            # TODO: change query and query with the withdraw time
+            status__in=(TransactionsStatus.IN_PROGRESS, TransactionsStatus.RETRY),
+            draw_time__lt=now,
         )
 
         print(f"[xxxxxxxxxxxxxxx] PRODUCE: {transactions}")
