@@ -4,6 +4,7 @@ from logging import getLogger
 from uuid import UUID
 
 import pika
+from django.db import transaction
 
 from wallet.celery import app
 from wallets.constants import TransactionsStatus, TransactionsType
@@ -23,33 +24,34 @@ def transactions_producer():
     channel = connection.channel()
 
     channel.queue_declare(queue="hello")
-
-    transactions = Transaction.objects.select_for_update().filter(
-        tr_type=TransactionsType.WITHDRAW,
-        status=TransactionsStatus.IN_PROGRESS,
-        # TODO: change query and query with the withdraw time
-    )
-
-    to_update = []
-
-    for tr in transactions:
-        channel.basic_publish(
-            exchange="",
-            routing_key="hello",
-            body=json.dumps(
-                str(
-                    {
-                        "uuid": tr.uuid.__str__(),
-                        "wallet_uuid": tr.wallet.uuid.__str__(),
-                        "amount": tr.amount,
-                    }
-                )
-            ),
+    print("[xxxxxxxxxxxxxxx] START PRODUCE")
+    with transaction.atomic():
+        transactions = Transaction.objects.select_for_update().filter(
+            tr_type=TransactionsType.WITHDRAW,
+            status=TransactionsStatus.IN_PROGRESS,
+            # TODO: change query and query with the withdraw time
         )
-        tr.status = TransactionsStatus.PENDING
-        to_update.append(tr)
 
-    Transaction.objects.bulk_update(objs=to_update, fields=["status"])
+        print(f"[xxxxxxxxxxxxxxx] PRODUCE: {transactions}")
+        for tr in transactions:
+            channel.basic_publish(
+                exchange="",
+                routing_key="hello",
+                body=json.dumps(
+                    str(
+                        {
+                            "uuid": tr.uuid.__str__(),
+                            "wallet_uuid": tr.wallet.uuid.__str__(),
+                            "amount": tr.amount,
+                        }
+                    )
+                ),
+            )
+
+            tr.status = TransactionsStatus.PENDING
+            tr.save(update_fields=["status"])
+
+        print("[xxxxxxxxxxxxxxx] PRODUCE IS OVER!!!!")
 
 
 @app.task()
@@ -65,17 +67,18 @@ def transactions_consumer():
     def callback(ch, method, properties, body):
         print(f" [x] Received {json.loads(body)}")
         tr_data = ast.literal_eval(json.loads(body))
-        tr = (
-            Transaction.objects.select_for_update()
-            .filter(uuid=UUID(tr_data["uuid"]))
-            .get()
-        )
+        with transaction.atomic():
+            tr = (
+                Transaction.objects.select_for_update()
+                .filter(uuid=UUID(tr_data["uuid"]))
+                .get()
+            )
 
-        withdrae = tr.wallet.withdraw(tr=tr)
+            withdrae = tr.wallet.withdraw(tr=tr)
 
-        if withdrae:
-            tr.status = TransactionsStatus.SUCCESS
-            tr.save(update_fields=["status"])
+            if withdrae:
+                tr.status = TransactionsStatus.SUCCESS
+                tr.save(update_fields=["status"])
 
     channel.basic_consume(queue="hello", on_message_callback=callback, auto_ack=True)
 

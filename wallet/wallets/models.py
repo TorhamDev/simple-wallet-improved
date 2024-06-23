@@ -4,8 +4,10 @@ from datetime import datetime
 from django.core.validators import MinLengthValidator
 from django.db import IntegrityError, models, transaction
 from django.utils import timezone
+from requests.exceptions import ConnectionError as ReqConnectionError
 
 from wallets.constants import TransactionsStatus, TransactionsType
+from wallets.exceptions import ThirdPartyError
 from wallets.utils import request_third_party_deposit
 
 
@@ -40,6 +42,9 @@ class Transaction(BaseModel):
     )
 
     draw_time = models.DateTimeField(default=timezone.now)
+
+    def get_queryset(self):
+        return self.__class__.objects.filter(uuid=self.uuid)
 
     def __str__(self) -> str:
         return f"{self.tr_type} {self.amount}"  # TODO figure out deleted wallets tr to show username too
@@ -96,11 +101,15 @@ class Wallet(BaseModel):
                     print("[X] Requesting to 3rd part bank!!!!!")
                     third_party = request_third_party_deposit()
                     if not third_party:
-                        raise ValueError("[X] BANK ERROR")
+                        raise ThirdPartyError()
                     return True
-            except (ValueError, IntegrityError):
-                tr.status = TransactionsStatus.RETRY
-                tr.save(update_fields=["status"])
+            except (ThirdPartyError, IntegrityError, ReqConnectionError) as e:
+                if isinstance(e, ThirdPartyError):
+                    tr.status = TransactionsStatus.FAILED
+                    tr.save(update_fields=["status"])
+                if isinstance(e, (ReqConnectionError, IntegrityError)):
+                    tr.status = TransactionsStatus.RETRY
+                    tr.save(update_fields=["status"])
                 return False
 
         print("[X] OH! wallet dosent have balance for this transaction!")
