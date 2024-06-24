@@ -81,7 +81,7 @@ DATABASES = {
         "NAME": "walletapp",
         "USER": "postgres",
         "PASSWORD": "postgres",
-        "HOST": "localhost",
+        "HOST": "postgresql",
     }
 }
 
@@ -135,7 +135,7 @@ REST_FRAMEWORK = {
 }
 
 
-CELERY_BROKER_URL = "amqp://rabbitmq:rabbitmq@127.0.0.1:5672"
+CELERY_BROKER_URL = "amqp://rabbitmq:rabbitmq@rabbitmq:5672"
 CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 

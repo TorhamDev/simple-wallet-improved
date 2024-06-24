@@ -1,0 +1,56 @@
+version: '3.5'
+
+services:
+  backend:
+    build: ./wallet
+    depends_on:
+      db:
+        condition: service_healthy
+    links:
+      - db:db
+    restart: always
+    hostname: backend
+    ports:
+      - "8000:8000"
+    networks:
+      - main
+  db:
+    image: postgres
+    restart: always
+    hostname: "postgresql"
+    volumes:
+      - "./pgdata:/var/lib/postgresql/data/pgdata"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_DB: walletapp
+    ports:
+       - '5432:5432'
+    networks:
+      - main
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  rabbit:
+    image: "rabbitmq:3-management"
+    restart: always
+    hostname: "rabbitmq"
+    environment:
+      RABBITMQ_DEFAULT_USER: "rabbitmq"
+      RABBITMQ_DEFAULT_PASS: "rabbitmq"
+      RABBITMQ_DEFAULT_VHOST: "/"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    labels:
+      NAME: "rabbitmq"
+    networks:
+      - main
+
+networks:
+  main:
+    driver: bridge
